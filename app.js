@@ -44,18 +44,30 @@ app.use('/graphql', graphqlHttp({
   schema: graphqlSchema,
   rootValue: graphqlResolver,
   graphiql: true,
+  customFormatErrorFn(error) {
+    if (!error.originalError) {
+      return error;
+    }
+    const { data, code = 500 } = error.originalError;
+    const { message = 'An error occured' } = error;
+    return {
+      message,
+      status: code,
+      data,
+    };
+  },
 }));
 
-app.use((error, req, res) => {
-  const { statusCode = 500, message, data } = error;
-  res.status(statusCode).json({ message, data });
-});
+// app.use((error, req, res) => {
+//   const { statusCode = 500, message, data } = error;
+//   res.status(statusCode).json({ message, data });
+// });
 
 mongoose
   .connect(process.env.MONGODB_URI, {
     useUnifiedTopology: true,
   })
   .then(() => {
-    app.listen(8080, () => console.log('http://localhost:8080'));
+    app.listen(8080, () => console.log('http://localhost:8080/graphql'));
   })
   .catch(error => console.log(error));
